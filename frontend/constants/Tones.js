@@ -10,7 +10,8 @@ var TONES = {
   Ab4 : 	415.30,
   A4 :	440.00,
   Bb4 : 	466.16,
-  B4 :	493.88
+  B4 :	493.88,
+  C5 : 261.63 * 2
 };
 
 module.exports = TONES;
