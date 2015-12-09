@@ -1,5 +1,5 @@
 // var AppDispatcher = require('../dispatcher/Dispatcher.js');
-var KeyActionse = require('../actions/KeyAction.jsx');
+var KeyActions = require('../actions/KeyAction.jsx');
 
 
 var KeyListener = {
@@ -22,11 +22,16 @@ var KeyListener = {
   },
 
   KeyUp: function(e){
+    console.log(e);
+
+    if(e.charCode == 0 && e.keyCode == 0) {return false;}
+
     var thisKey = KeyListener.Mapping[e.keyCode];
     KeyActions.silenceKey(thisKey);
   },
 
   KeyDown: function(e){
+    console.log(e);
     var thisKey = KeyListener.Mapping[e.keyCode];
     KeyActions.playKey(thisKey);
   }
