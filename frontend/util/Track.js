@@ -25,11 +25,17 @@ Track.prototype.play = function(i){
   KeyStore.activeKeys().forEach(function(key){
     KeyAction.silenceKey(key);
   });
-  if (i > this.roll.length){
+  if (i > this.roll.length-1){
     return;
   }
 
   var currentNotes = this.roll[i][0];
+  if (typeof this.roll[i+1] === 'undefined'){
+    currentNotes.forEach(function(note){
+      KeyAction.playKey(note);
+    });
+    return;
+  }
   var interval = this.roll[i+1][1] - this.roll[i][1];
   currentNotes.forEach(function(note){
     KeyAction.playKey(note);

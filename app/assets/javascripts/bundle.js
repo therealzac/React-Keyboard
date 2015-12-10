@@ -48,13 +48,18 @@
 	var ReactDOM = __webpack_require__(158);
 	var KeyListener = __webpack_require__(159);
 	var Keyboard = __webpack_require__(165);
-	
+	var Jukebox = __webpack_require__(190);
 	var KeyStore = __webpack_require__(169);
 	
 	window.KeyListener = KeyListener;
 	
 	document.addEventListener('DOMContentLoaded', function () {
-	  ReactDOM.render(React.createElement(Keyboard, null), document.getElementById('root'));
+	  ReactDOM.render(React.createElement(
+	    'div',
+	    null,
+	    React.createElement(Keyboard, null),
+	    React.createElement(Jukebox, null)
+	  ), document.getElementById('root'));
 	});
 
 /***/ },
@@ -26678,11 +26683,17 @@
 	  KeyStore.activeKeys().forEach(function (key) {
 	    KeyAction.silenceKey(key);
 	  });
-	  if (i > this.roll.length) {
+	  if (i > this.roll.length - 1) {
 	    return;
 	  }
 	
 	  var currentNotes = this.roll[i][0];
+	  if (typeof this.roll[i + 1] === 'undefined') {
+	    currentNotes.forEach(function (note) {
+	      KeyAction.playKey(note);
+	    });
+	    return;
+	  }
 	  var interval = this.roll[i + 1][1] - this.roll[i][1];
 	  currentNotes.forEach(function (note) {
 	    KeyAction.playKey(note);
@@ -26746,10 +26757,92 @@
 	      actionType: "ADD_TRACK",
 	      track: track
 	    });
+	  },
+	  removeTrack: function (track) {
+	    AppDispatcher.dispatch({
+	      actionType: "REMOVE_TRACK",
+	      track: track
+	    });
 	  }
 	};
 	
 	module.exports = TrackActions;
+
+/***/ },
+/* 190 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(1);
+	var TrackStore = __webpack_require__(188);
+	var TrackPlayer = __webpack_require__(191);
+	
+	var Jukebox = React.createClass({
+	  displayName: 'Jukebox',
+	
+	  getInitialState: function () {
+	    return { tracks: TrackStore.all() };
+	  },
+	  _tracksChanged: function () {
+	    this.setState({ tracks: TrackStore.all() });
+	  },
+	  componentDidMount: function () {
+	    TrackStore.addListener(this._tracksChanged);
+	  },
+	  render: function () {
+	    var allTracks = this.state.tracks.map(function (track, idx) {
+	      return React.createElement(TrackPlayer, { key: idx, track: track });
+	    });
+	    return React.createElement(
+	      'div',
+	      null,
+	      React.createElement(
+	        'h1',
+	        null,
+	        'Jukebox'
+	      ),
+	      allTracks
+	    );
+	  }
+	});
+	
+	module.exports = Jukebox;
+
+/***/ },
+/* 191 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(1);
+	var TrackStore = __webpack_require__(188);
+	var TrackActions = __webpack_require__(189);
+	
+	var TrackPlayer = React.createClass({
+	  displayName: 'TrackPlayer',
+	
+	  removeTrack: function () {
+	    TrackActions.removeTrack(this.props.track);
+	  },
+	  playTrack: function () {
+	    this.props.track.play(0);
+	  },
+	  render: function () {
+	    return React.createElement(
+	      'div',
+	      null,
+	      React.createElement(
+	        'button',
+	        { onClick: this.playTrack },
+	        'Play'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.removeTrack },
+	        'Delete'
+	      )
+	    );
+	  }
+	});
+	
+	module.exports = TrackPlayer;
 
 /***/ }
 /******/ ]);

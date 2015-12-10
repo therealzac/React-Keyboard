@@ -7,6 +7,12 @@ var TrackActions = {
       track: track
     });
   },
+  removeTrack: function(track){
+    AppDispatcher.dispatch({
+      actionType: "REMOVE_TRACK",
+      track: track
+    });
+  }
 };
 
 module.exports = TrackActions;
