@@ -21,11 +21,12 @@ var Key = React.createClass({
       this.state.sound.start();
     }
   },
-
   componentDidMount: function(){
     KeyStore.addListener(this._keysChanged);
-
   },
+  // componentWillUnmount: function(){
+  //   KeyStore.removeListener(this._keysChanged);
+  // },
 
   render: function(){
     var showPlaying = (this.state.playing) ? " playing" : " silent";

@@ -22,7 +22,6 @@ var KeyListener = {
   },
 
   KeyUp: function(e){
-    console.log(e);
 
     if(e.charCode == 0 && e.keyCode == 0) {return false;}
 
@@ -31,7 +30,6 @@ var KeyListener = {
   },
 
   KeyDown: function(e){
-    console.log(e);
     var thisKey = KeyListener.Mapping[e.keyCode];
     KeyActions.playKey(thisKey);
   }

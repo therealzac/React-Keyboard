@@ -47,14 +47,14 @@
 	var React = __webpack_require__(1);
 	var ReactDOM = __webpack_require__(158);
 	var KeyListener = __webpack_require__(159);
-	var Key = __webpack_require__(183);
+	var Keyboard = __webpack_require__(165);
 	
-	var KeyStore = __webpack_require__(165);
+	var KeyStore = __webpack_require__(169);
 	
 	window.KeyListener = KeyListener;
 	
 	document.addEventListener('DOMContentLoaded', function () {
-	  ReactDOM.render(React.createElement(Key, { note: 'C4' }), document.getElementById('root'));
+	  ReactDOM.render(React.createElement(Keyboard, null), document.getElementById('root'));
 	});
 
 /***/ },
@@ -19670,7 +19670,6 @@
 	  },
 	
 	  KeyUp: function (e) {
-	    console.log(e);
 	
 	    if (e.charCode == 0 && e.keyCode == 0) {
 	      return false;
@@ -19681,7 +19680,6 @@
 	  },
 	
 	  KeyDown: function (e) {
-	    console.log(e);
 	    var thisKey = KeyListener.Mapping[e.keyCode];
 	    KeyActions.playKey(thisKey);
 	  }
@@ -20035,9 +20033,150 @@
 /* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Store = __webpack_require__(166).Store;
+	var React = __webpack_require__(1);
+	var Key = __webpack_require__(166);
+	var Tones = __webpack_require__(168);
+	var Recorder = __webpack_require__(186);
+	
+	var Keyboard = React.createClass({
+	  displayName: 'Keyboard',
+	
+	  render: function () {
+	    var keys = Object.keys(Tones);
+	    keys = keys.map(function (key, idx) {
+	      return React.createElement(Key, { key: idx, note: key });
+	    });
+	
+	    return React.createElement(
+	      'div',
+	      null,
+	      keys,
+	      React.createElement(Recorder, null)
+	    );
+	  }
+	
+	});
+	
+	module.exports = Keyboard;
+
+/***/ },
+/* 166 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(1);
+	var Note = __webpack_require__(167);
+	var Tones = __webpack_require__(168);
+	var KeyStore = __webpack_require__(169);
+	
+	var Key = React.createClass({
+	  displayName: 'Key',
+	
+	  getInitialState: function () {
+	    var thisTone = Tones[this.props.note];
+	    return {
+	      playing: false,
+	      sound: new Note(thisTone) };
+	  },
+	
+	  _keysChanged: function () {
+	    if (KeyStore.activeKeys().indexOf(this.props.note) == -1) {
+	      this.setState({ playing: false });
+	      this.state.sound.stop();
+	    } else {
+	      this.setState({ playing: true });
+	      this.state.sound.start();
+	    }
+	  },
+	  componentDidMount: function () {
+	    KeyStore.addListener(this._keysChanged);
+	  },
+	  // componentWillUnmount: function(){
+	  //   KeyStore.removeListener(this._keysChanged);
+	  // },
+	
+	  render: function () {
+	    var showPlaying = this.state.playing ? " playing" : " silent";
+	    return React.createElement(
+	      'div',
+	      null,
+	      this.props.note,
+	      showPlaying
+	    );
+	  }
+	});
+	
+	module.exports = Key;
+
+/***/ },
+/* 167 */
+/***/ function(module, exports) {
+
+	var ctx = new (window.AudioContext || window.webkitAudioContext)();
+	
+	var createOscillator = function (freq) {
+	  var osc = ctx.createOscillator();
+	  osc.type = "sine";
+	  osc.frequency.value = freq;
+	  osc.detune.value = 0;
+	  osc.start(ctx.currentTime);
+	  return osc;
+	};
+	
+	var createGainNode = function () {
+	  var gainNode = ctx.createGain();
+	  gainNode.gain.value = 0;
+	  gainNode.connect(ctx.destination);
+	  return gainNode;
+	};
+	
+	var Note = function (freq) {
+	  this.oscillatorNode = createOscillator(freq);
+	  this.gainNode = createGainNode();
+	  this.oscillatorNode.connect(this.gainNode);
+	};
+	
+	Note.prototype = {
+	  start: function () {
+	    // can't explain 0.3, it is a reasonable value
+	    this.gainNode.gain.value = 0.3;
+	  },
+	
+	  stop: function () {
+	    this.gainNode.gain.value = 0;
+	  }
+	};
+	
+	module.exports = Note;
+
+/***/ },
+/* 168 */
+/***/ function(module, exports) {
+
+	var TONES = {
+	  C4: 261.63,
+	  Db4: 277.18,
+	  D4: 293.66,
+	  Eb4: 311.13,
+	  E4: 329.63,
+	  F4: 349.23,
+	  Gb4: 369.99,
+	  G4: 392.00,
+	  Ab4: 415.30,
+	  A4: 440.00,
+	  Bb4: 466.16,
+	  B4: 493.88,
+	  C5: 261.63 * 2
+	};
+	
+	module.exports = TONES;
+
+/***/ },
+/* 169 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Store = __webpack_require__(170).Store;
 	var AppDispatcher = __webpack_require__(161);
-	var Tones = __webpack_require__(182);
+	var Tones = __webpack_require__(168);
 	
 	var _activeKeys = [];
 	var KeyStore = new Store(AppDispatcher);
@@ -20072,7 +20211,7 @@
 	module.exports = KeyStore;
 
 /***/ },
-/* 166 */
+/* 170 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20084,15 +20223,15 @@
 	 * of patent rights can be found in the PATENTS file in the same directory.
 	 */
 	
-	module.exports.Container = __webpack_require__(167);
-	module.exports.MapStore = __webpack_require__(170);
-	module.exports.Mixin = __webpack_require__(181);
-	module.exports.ReduceStore = __webpack_require__(171);
-	module.exports.Store = __webpack_require__(172);
+	module.exports.Container = __webpack_require__(171);
+	module.exports.MapStore = __webpack_require__(174);
+	module.exports.Mixin = __webpack_require__(185);
+	module.exports.ReduceStore = __webpack_require__(175);
+	module.exports.Store = __webpack_require__(176);
 
 
 /***/ },
-/* 167 */
+/* 171 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20114,10 +20253,10 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var FluxStoreGroup = __webpack_require__(168);
+	var FluxStoreGroup = __webpack_require__(172);
 	
 	var invariant = __webpack_require__(164);
-	var shallowEqual = __webpack_require__(169);
+	var shallowEqual = __webpack_require__(173);
 	
 	var DEFAULT_OPTIONS = {
 	  pure: true,
@@ -20275,7 +20414,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 168 */
+/* 172 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20356,7 +20495,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 169 */
+/* 173 */
 /***/ function(module, exports) {
 
 	/**
@@ -20411,7 +20550,7 @@
 	module.exports = shallowEqual;
 
 /***/ },
-/* 170 */
+/* 174 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20432,8 +20571,8 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var FluxReduceStore = __webpack_require__(171);
-	var Immutable = __webpack_require__(180);
+	var FluxReduceStore = __webpack_require__(175);
+	var Immutable = __webpack_require__(184);
 	
 	var invariant = __webpack_require__(164);
 	
@@ -20561,7 +20700,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 171 */
+/* 175 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20582,9 +20721,9 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var FluxStore = __webpack_require__(172);
+	var FluxStore = __webpack_require__(176);
 	
-	var abstractMethod = __webpack_require__(179);
+	var abstractMethod = __webpack_require__(183);
 	var invariant = __webpack_require__(164);
 	
 	var FluxReduceStore = (function (_FluxStore) {
@@ -20668,7 +20807,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 172 */
+/* 176 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20687,7 +20826,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var _require = __webpack_require__(173);
+	var _require = __webpack_require__(177);
 	
 	var EventEmitter = _require.EventEmitter;
 	
@@ -20851,7 +20990,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 173 */
+/* 177 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20864,14 +21003,14 @@
 	 */
 	
 	var fbemitter = {
-	  EventEmitter: __webpack_require__(174)
+	  EventEmitter: __webpack_require__(178)
 	};
 	
 	module.exports = fbemitter;
 
 
 /***/ },
-/* 174 */
+/* 178 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20890,10 +21029,10 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 	
-	var EmitterSubscription = __webpack_require__(175);
-	var EventSubscriptionVendor = __webpack_require__(177);
+	var EmitterSubscription = __webpack_require__(179);
+	var EventSubscriptionVendor = __webpack_require__(181);
 	
-	var emptyFunction = __webpack_require__(178);
+	var emptyFunction = __webpack_require__(182);
 	var invariant = __webpack_require__(164);
 	
 	/**
@@ -21068,7 +21207,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 175 */
+/* 179 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -21089,7 +21228,7 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var EventSubscription = __webpack_require__(176);
+	var EventSubscription = __webpack_require__(180);
 	
 	/**
 	 * EmitterSubscription represents a subscription with listener and context data.
@@ -21121,7 +21260,7 @@
 	module.exports = EmitterSubscription;
 
 /***/ },
-/* 176 */
+/* 180 */
 /***/ function(module, exports) {
 
 	/**
@@ -21172,7 +21311,7 @@
 	module.exports = EventSubscription;
 
 /***/ },
-/* 177 */
+/* 181 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -21281,7 +21420,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 178 */
+/* 182 */
 /***/ function(module, exports) {
 
 	/**
@@ -21324,7 +21463,7 @@
 	module.exports = emptyFunction;
 
 /***/ },
-/* 179 */
+/* 183 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -21351,7 +21490,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 180 */
+/* 184 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -26316,7 +26455,7 @@
 	}));
 
 /***/ },
-/* 181 */
+/* 185 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -26333,7 +26472,7 @@
 	
 	'use strict';
 	
-	var FluxStoreGroup = __webpack_require__(168);
+	var FluxStoreGroup = __webpack_require__(172);
 	
 	var invariant = __webpack_require__(164);
 	
@@ -26439,113 +26578,178 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
 
 /***/ },
-/* 182 */
-/***/ function(module, exports) {
-
-	var TONES = {
-	  C4: 261.63,
-	  Db4: 277.18,
-	  D4: 293.66,
-	  Eb4: 311.13,
-	  E4: 329.63,
-	  F4: 349.23,
-	  Gb4: 369.99,
-	  G4: 392.00,
-	  Ab4: 415.30,
-	  A4: 440.00,
-	  Bb4: 466.16,
-	  B4: 493.88,
-	  C5: 261.63 * 2
-	};
-	
-	module.exports = TONES;
-
-/***/ },
-/* 183 */
+/* 186 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var React = __webpack_require__(1);
-	var Note = __webpack_require__(184);
-	var Tones = __webpack_require__(182);
-	var KeyStore = __webpack_require__(165);
+	var Track = __webpack_require__(187);
+	var KeyStore = __webpack_require__(169);
+	var TrackStore = __webpack_require__(188);
+	var TrackActions = __webpack_require__(189);
 	
-	var Key = React.createClass({
-	  displayName: 'Key',
+	var Recorder = React.createClass({
+	  displayName: 'Recorder',
 	
 	  getInitialState: function () {
-	    var thisTone = Tones[this.props.note];
 	    return {
-	      playing: false,
-	      sound: new Note(thisTone) };
+	      isRecording: false,
+	      track: new Track()
+	    };
 	  },
-	
 	  _keysChanged: function () {
-	    if (KeyStore.activeKeys().indexOf(this.props.note) == -1) {
-	      this.setState({ playing: false });
-	      this.state.sound.stop();
-	    } else {
-	      this.setState({ playing: true });
-	      this.state.sound.start();
+	    if (this.state.isRecording) {
+	      this.state.track.addNotes(KeyStore.activeKeys(), new Date());
 	    }
+	    this.setState({ track: this.state.track });
 	  },
-	
 	  componentDidMount: function () {
 	    KeyStore.addListener(this._keysChanged);
 	  },
+	  // componentWillUnmount: function(){
+	  //   KeyStore.removeListener(this._keysChanged);
+	  // },
+	  startRecording: function () {
+	    this.state.track.startRecording();
+	    this.setState({ isRecording: true });
+	  },
+	  stopRecording: function () {
+	    this.state.track.stopRecording();
+	    this.setState({ isRecording: false });
+	    TrackActions.addTrack(this.state.track);
+	    console.log(TrackStore.all());
+	  },
+	  play: function () {
+	    this.state.track.play(0);
+	  },
 	
 	  render: function () {
-	    var showPlaying = this.state.playing ? " playing" : " silent";
 	    return React.createElement(
 	      'div',
 	      null,
-	      this.props.note,
-	      showPlaying
+	      React.createElement(
+	        'button',
+	        { onClick: this.startRecording },
+	        'Start Recording'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.stopRecording },
+	        'Stop Recording'
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.play },
+	        'Play Recording'
+	      )
 	    );
 	  }
 	});
 	
-	module.exports = Key;
+	module.exports = Recorder;
 
 /***/ },
-/* 184 */
-/***/ function(module, exports) {
+/* 187 */
+/***/ function(module, exports, __webpack_require__) {
 
-	var ctx = new (window.AudioContext || window.webkitAudioContext)();
-	
-	var createOscillator = function (freq) {
-	  var osc = ctx.createOscillator();
-	  osc.type = "sine";
-	  osc.frequency.value = freq;
-	  osc.detune.value = 0;
-	  osc.start(ctx.currentTime);
-	  return osc;
+	var KeyAction = __webpack_require__(160);
+	var Note = __webpack_require__(167);
+	var Tones = __webpack_require__(168);
+	var KeyStore = __webpack_require__(169);
+	var Track = function (name) {
+	  this.name = name;
+	  this.roll = [];
 	};
 	
-	var createGainNode = function () {
-	  var gainNode = ctx.createGain();
-	  gainNode.gain.value = 0;
-	  gainNode.connect(ctx.destination);
-	  return gainNode;
+	Track.prototype.startRecording = function () {
+	  this.roll = [];
+	  this.time = new Date();
 	};
 	
-	var Note = function (freq) {
-	  this.oscillatorNode = createOscillator(freq);
-	  this.gainNode = createGainNode();
-	  this.oscillatorNode.connect(this.gainNode);
+	Track.prototype.stopRecording = function () {
+	  this.addNotes([], new Date());
 	};
 	
-	Note.prototype = {
-	  start: function () {
-	    // can't explain 0.3, it is a reasonable value
-	    this.gainNode.gain.value = 0.3;
-	  },
+	Track.prototype.addNotes = function (notes, timeStamp) {
+	  var timeSlice = timeStamp - this.time;
+	  this.roll.push([notes, timeSlice]);
+	};
 	
-	  stop: function () {
-	    this.gainNode.gain.value = 0;
+	Track.prototype.play = function (i) {
+	  KeyStore.activeKeys().forEach(function (key) {
+	    KeyAction.silenceKey(key);
+	  });
+	  if (i > this.roll.length) {
+	    return;
+	  }
+	
+	  var currentNotes = this.roll[i][0];
+	  var interval = this.roll[i + 1][1] - this.roll[i][1];
+	  currentNotes.forEach(function (note) {
+	    KeyAction.playKey(note);
+	  });
+	
+	  var self = this;
+	
+	  setTimeout(function () {
+	    self.play(i + 1);
+	  }, interval);
+	};
+	
+	module.exports = Track;
+
+/***/ },
+/* 188 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Store = __webpack_require__(170).Store;
+	var AppDispatcher = __webpack_require__(161);
+	
+	var _Tracks = [];
+	var TrackStore = new Store(AppDispatcher);
+	
+	TrackStore.__onDispatch = function (action) {
+	  switch (action.actionType) {
+	    case "ADD_TRACK":
+	      this.addTrack(action.track);
+	      break;
+	    case "REMOVE_TRACK":
+	      this.removeTrack(action.track);
+	      break;
+	  }
+	};
+	TrackStore.addTrack = function (track) {
+	  _Tracks.push(track);
+	  TrackStore.__emitChange();
+	};
+	
+	TrackStore.removeTrack = function (track) {
+	  var idx = _Tracks.indexOf(track);
+	  _Tracks.splice(idx, 1);
+	  TrackStore.__emitChange();
+	};
+	
+	TrackStore.all = function () {
+	  return _Tracks.slice();
+	};
+	
+	module.exports = TrackStore;
+
+/***/ },
+/* 189 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var AppDispatcher = __webpack_require__(161);
+	
+	var TrackActions = {
+	  addTrack: function (track) {
+	    AppDispatcher.dispatch({
+	      actionType: "ADD_TRACK",
+	      track: track
+	    });
 	  }
 	};
 	
-	module.exports = Note;
+	module.exports = TrackActions;
 
 /***/ }
 /******/ ]);
